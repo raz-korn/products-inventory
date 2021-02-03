@@ -1,0 +1,84 @@
+_schema-version: "3.2"
+ID: products-inventory
+description: SAP Fiori Freestyle Demo
+version: 0.0.1
+modules:
+- name: products-inventory-router
+  type: approuter.nodejs
+  path: cf/router
+  requires:
+  - name: products-inventory-html5-repo-runtime
+  - name: products-inventory-uaa
+  - name: products-inventory-destination
+    group: destinations
+    properties:
+      forwardAuthToken: false
+      name: ui5
+      url: https://ui5.sap.com
+  - name: products-inventory-connectivity
+  parameters:
+    disk-quota: 256M
+    memory: 256M
+    routes:
+    - route: https://products-inventory-${org}-${space}.${default-domain}
+- name: products-inventory-deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: products-inventory-html5-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - productsinventoryproductsinventory.zip
+      name: productsinventoryproductsinventory
+      target-path: resources/
+- name: productsinventoryproductsinventory
+  type: html5
+  path: productsinventory
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: products-inventory-uaa
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      tenant-mode: dedicated
+      xsappname: products-inventory-${org}
+    service: xsuaa
+    service-plan: application
+- name: products-inventory-html5-repo-runtime
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-runtime
+- name: products-inventory-destination
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: destination
+    service-plan: lite
+- name: products-inventory-html5-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-plan: app-host
+- name: products-inventory-connectivity
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: connectivity
+    service-plan: lite
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
